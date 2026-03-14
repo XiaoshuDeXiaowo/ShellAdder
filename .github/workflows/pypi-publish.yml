@@ -10,6 +10,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # 允许生成 OIDC 令牌
+      contents: read    # 检出代码所需（通常必须）
     steps:
     - uses: actions/checkout@v4
 
