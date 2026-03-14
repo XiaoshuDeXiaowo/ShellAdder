@@ -14,6 +14,7 @@
 """一个为一些文件“加壳”成 Python 文件的工具。"""
 
 __version__ = 'v0.0.1'
+__all__ = ['__version__', 'run', 'main', 'zip_folder_contents']
 
 import os
 import shutil
