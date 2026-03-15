@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-#################################################
-# OriginalFileName: ShellAdder.py
-#
-# This file is a part of The ShellAdder Project.
-# https://github.com/XiaoshuDeXiaowo/ShellAdder
-#
-# Released under the MIT License.
-# Copyright (C) 2026 XiaoshuDeXiaowo.
-#################################################
+##################################################
+# OriginalFileName: ShellAdder.py                #
+#                                                #
+# This file is a part of The ShellAdder Project. #
+# https://github.com/XiaoshuDeXiaowo/ShellAdder  #
+#                                                #
+# Released under the MIT License.                #
+# Copyright (C) 2026 XiaoshuDeXiaowo.            #
+##################################################
 
-"""一个为一些文件“加壳”成 Python 文件的工具。"""
+"""A tool to "pack" files into a Python script."""
 
-__version__ = 'v0.0.1'
-__all__ = ['__version__', 'run', 'main', 'zip_folder_contents']
+__author__ = 'XiaoshuDeXiaowo'
+__version__ = 'v0.0.2'
+__all__ = ['__version__', 'run', 'main', 'zip_folder_contents', 'format_bytes']
 
 import os
 import shutil
@@ -49,10 +50,38 @@ with open(tmpfile, 'wb') as f:
 tmpfolder = os.path.join(gettempdir(), '%s')
 with ZipFile(tmpfile, 'r') as zipf:
     zipf.extractall(tmpfolder)
-subprocess.run([%sos.path.join(tmpfolder, '%s')])
 os.remove(tmpfile)
+subprocess.run([%sos.path.join(tmpfolder, '%s')])
 shutil.rmtree(tmpfolder)
 '''
+
+def format_bytes(data: bytes, bytes_per_line: int = 16) -> str:
+    """ 将 bytes 对象转换为多行字节串字面量。
+
+    Parameters
+    ----------
+    data: bytes
+        原始二进制数据
+    bytes_per_line: int = 16
+        每行显示的字节数，默认 16
+
+    Return
+    ------
+    data: str
+        可用于写入 Python 源文件的字符串，例如：
+        b"\\x00\\x01\\x02...\\x0f\\\n\\x10\\x11..."
+    """
+    # 将每个字节转换为 \xhh 格式（小写十六进制）
+    hex_bytes = [f"\\x{b:02x}" for b in data]
+
+    lines = []
+    for i in range(0, len(hex_bytes), bytes_per_line):
+        chunk = "".join(hex_bytes[i:i + bytes_per_line])
+        lines.append(chunk)
+
+    # 拼接行：第一行前加 b" ，每行后加续行符（最后一行不加），最后加闭合引号
+    content = 'b"' + '\\\n'.join(lines) + '"'
+    return content
 
 def zip_folder_contents(source_folder, output_zip):
     """压缩文件夹。
@@ -87,53 +116,72 @@ def run(input_file_or_folder: str, output: str, executable_name: str, verbose: b
     assert isinstance(verbose, bool), 'verbose must be a boolean.'
     global _content, __version__
     if verbose:
-        sys.stderr.write(f'ShellAdder {__version__} is running on {sys.platform} using Python {sys.version}.')
-        sys.stderr.write(f'Command line arguments as list: {sys.argv}')
-        sys.stderr.write('Copyright (C) 2026 XiaoshuDeXiaowo.')
-        sys.stderr.write('https://github.com/XiaoshuDeXiaowo/ShellAdder')
+        sys.stderr.write(f'ShellAdder {__version__} is running on {sys.platform} using Python {sys.version}.\n')
+        sys.stderr.write(f'Command line arguments as list: {sys.argv}\n')
+        sys.stderr.write('Copyright (C) 2026 XiaoshuDeXiaowo.\n')
+        sys.stderr.write('https://github.com/XiaoshuDeXiaowo/ShellAdder\n')
+        sys.stderr.write('------------------------------------------------------\n')
         sys.stderr.flush()
 
-    assert os.path.exists(input_file_or_folder), 'The specified input file does not exist.'
+    assert os.path.exists(input_file_or_folder), 'The specified input file (or folder) does not exist.'
     input_path = Path(input_file_or_folder)
+    assert input_path.is_dir() or input_file_or_folder.endswith('zip'), 'The specified input file must be a zip file.'
     if verbose:
-        sys.stderr.write(f'ShellAdder: {input_path = }')
+        sys.stderr.write(f'ShellAdder: {input_path = }\n')
         sys.stderr.flush()
 
-    tmp_folder = Path(gettempdir()) / 'ShellAdder.tmp'
+    tmp_folder = Path(gettempdir()) / 'ShellAdder_tmp'
     tmp_folder.mkdir(exist_ok=True)
     if verbose:
-        sys.stderr.write(f'ShellAdder: {tmp_folder = }')
+        sys.stderr.write(f'ShellAdder: {tmp_folder = }\n')
         sys.stderr.flush()
 
     exe_suffix = executable_name.split('.')[-1]
     is_py = 'py' in exe_suffix
     if verbose:
-        sys.stderr.write(f'ShellAdder: {exe_suffix = }')
-        sys.stderr.write(f'ShellAdder: {is_py = }')
+        sys.stderr.write(f'ShellAdder: {exe_suffix = }\n')
+        sys.stderr.write(f'ShellAdder: {is_py = }\n')
         sys.stderr.flush()
 
-    with open(output, 'w', encoding='utf-8') as file:
-        if input_path.is_dir():
-            zip_name = (tmp_folder / f'{input_path.name}.zip').absolute()
-            zip_folder_contents(input_path, zip_name)
-            input_path = Path(zip_name)
-        repr_file_content = repr(open(input_path, 'rb').read())
-        file.write(_content % (__version__,
-                               repr_file_content,
-                               input_path.name,
-                               input_path.name,
-                               'sys.executable, ' if is_py else '',
-                               executable_name))
-    shutil.rmtree(tmp_folder)
+    try:
+        with open(output, 'w', encoding='utf-8') as file:
+            if input_path.is_dir():
+                if verbose:
+                    sys.stderr.write('The input_path is a dir. Compressing to zip file...\n')
+                    sys.stderr.flush()
+                zip_name = (tmp_folder / f'{input_path.name}.zip').absolute()
+                zip_folder_contents(input_path, zip_name)
+                input_path = Path(zip_name)
+                if verbose:
+                    sys.stderr.write(f'Compression completed. Compressed file: {input_path}\n')
+                    sys.stderr.flush()
+            elif verbose:
+                sys.stderr.write('The input_path is a zip file.\n')
+                sys.stderr.flush()
+            repr_file_content = format_bytes(open(input_path, 'rb').read())
+            if verbose:
+                sys.stderr.write(f'Starting to write to file {output} ...\n')
+                sys.stderr.flush()
+            file.write(_content % (__version__,
+                                   repr_file_content,
+                                   input_path.name,
+                                   input_path.name[:-4],
+                                   'sys.executable, ' if is_py else '',
+                                   executable_name))
+            if verbose:
+                sys.stderr.write(f'The output file {output} was successfully written.\n')
+                sys.stderr.flush()
+    finally:
+        shutil.rmtree(tmp_folder)
 
 def main():
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('input_file_or_folder', help='要“加壳”的 zip 文件或文件夹')
-    parser.add_argument('output', help='输出的 Python 文件名')
-    parser.add_argument('executable_name', help='要执行的 Python 文件或可执行文件名')
-    parser.add_argument('-V', '--version', action='version', version=__version__, help='显示版本号并退出')
-    parser.add_argument('-v', '--verbose', action='store_true', help='输出更多信息')
+    parser.add_argument('input_file_or_folder', help='The zip file or folder to be "packed"')
+    parser.add_argument('output', help='The output Python filename')
+    parser.add_argument('executable_name', help='The Python script or executable file to run')
+    parser.add_argument('-V', '--version', action='version', version=__version__, help='Show the version number and exit')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Output more information')
 
     args = parser.parse_args()
     run(args.input_file_or_folder, args.output, args.executable_name, args.verbose)

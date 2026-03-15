@@ -8,9 +8,12 @@
 # Python
 *.py[cod]
 __pycache__/
+ShellAdder.egg-info/
+build/
+dist/
 
 # venv
 *env/
 
 # temp
-*mp/
+t*mp/

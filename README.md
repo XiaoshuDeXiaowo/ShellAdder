@@ -1,9 +1,40 @@
-# ShellAdder.py
+# ShellAdder
 
-> 这是一个 Python 文件？不对，里面怎么还有二进制的东西……
+> Is this a Python file? No... Why is there binary data inside?
 
-使用 Python 将一些文件打包成 Python 文件并在运行时自解压并运行指定的文件（类似于加壳）
+<p align="center">English | <a href="./docs/README_zh.md">简体中文</a></p>
 
-## 用法
+A Python tool that packages files into a Python script and automatically extracts and runs the specified file at runtime (similar to packing/adding a shell).
 
-WIP
+## Installation
+
+Via Python package manager: (using pip as an example)
+
+```sh
+pip install ShellAdder
+```
+
+From source:
+
+```sh
+git clone https://github.com/XiaoshuDeXiaowo/ShellAdder.git
+pip install .
+```
+
+## Usage
+
+```
+ShellAdder [-h] [-V] [-v] input_file_or_folder output executable_name
+
+A tool to "pack" files into a Python script.
+
+Positional arguments:
+  input_file_or_folder  The zip file or folder to be "packed"
+  output                The output Python filename
+  executable_name       The Python script or executable file to run
+
+Options:
+  -h, --help            Show this help message and exit
+  -V, --version         Show the version number and exit
+  -v, --verbose         Output more information
+```
