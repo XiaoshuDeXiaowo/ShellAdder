@@ -3,7 +3,7 @@ from setuptools import setup
 from ShellAdder import __version__ as ShellAdder_version
 
 with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read().replace('./', 'https://github.com/XiaoshuDeXiaowo/ShellAdder/')
+    long_description = fh.read().replace('./', 'https://github.com/XiaoshuDeXiaowo/ShellAdder/blob/main/')
 
 setup(
     name='ShellAdder',
